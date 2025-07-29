@@ -7,12 +7,15 @@ import { VisualizedDashboard } from '@/components/VisualizedDashboard'
 import { UserVerification } from '@/components/UserVerification'
 import BusinessIntelligenceDashboard from '@/components/BusinessIntelligenceDashboard'
 import ProprietaryDataHub from '@/components/ProprietaryDataHub'
+import ProfessionalDashboard from '@/components/ProfessionalDashboard'
+import SubscriptionManager from '@/components/SubscriptionManager'
+import AIInsightsGenerator from '@/components/AIInsightsGenerator'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Survey } from '@/types/survey'
 import { blink } from '@/blink/client'
-import { BarChart3, Users, MessageSquare, TrendingUp, Shield, Brain, Database } from 'lucide-react'
+import { BarChart3, Users, MessageSquare, TrendingUp, Shield, Brain, Database, Crown, Sparkles, Settings } from 'lucide-react'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -22,6 +25,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('insights')
   const [userVerification, setUserVerification] = useState(null)
   const [showVerification, setShowVerification] = useState(false)
+  const [userTier, setUserTier] = useState<'free' | 'premium' | 'enterprise'>('free')
 
   const loadSurveys = useCallback(async () => {
     try {
@@ -58,6 +62,21 @@ function App() {
     }
   }, [user])
 
+  const loadUserTier = useCallback(async () => {
+    try {
+      const subscription = await blink.db.subscriptionTiers.list({
+        where: { user_id: user.id, is_active: true },
+        limit: 1
+      })
+      
+      if (subscription.length > 0) {
+        setUserTier(subscription[0].tier_name as any)
+      }
+    } catch (error) {
+      console.error('Error loading user tier:', error)
+    }
+  }, [user])
+
   useEffect(() => {
     const unsubscribe = blink.auth.onAuthStateChanged((state) => {
       setUser(state.user)
@@ -70,8 +89,9 @@ function App() {
     if (user) {
       loadSurveys()
       checkUserVerification()
+      loadUserTier()
     }
-  }, [user, loadSurveys, checkUserVerification])
+  }, [user, loadSurveys, checkUserVerification, loadUserTier])
 
   const handleVerificationComplete = (verificationData: any) => {
     setUserVerification(verificationData)
@@ -218,26 +238,38 @@ function App() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 max-w-4xl mx-auto mb-8 bg-white/80 backdrop-blur-sm border border-orange-200">
-              <TabsTrigger value="insights" className="flex items-center space-x-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                <TrendingUp className="h-4 w-4" />
-                <span>Dashboard</span>
+            <TabsList className="grid w-full grid-cols-8 max-w-6xl mx-auto mb-8 bg-white/80 backdrop-blur-sm border border-orange-200">
+              <TabsTrigger value="insights" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <TrendingUp className="h-3 w-3" />
+                <span>Overview</span>
               </TabsTrigger>
-              <TabsTrigger value="detailed" className="flex items-center space-x-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                <BarChart3 className="h-4 w-4" />
+              <TabsTrigger value="professional" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <BarChart3 className="h-3 w-3" />
+                <span>Pro Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="detailed" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <BarChart3 className="h-3 w-3" />
                 <span>Analytics</span>
               </TabsTrigger>
-              <TabsTrigger value="business" className="flex items-center space-x-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                <Brain className="h-4 w-4" />
+              <TabsTrigger value="ai" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <Sparkles className="h-3 w-3" />
+                <span>AI Insights</span>
+              </TabsTrigger>
+              <TabsTrigger value="business" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <Brain className="h-3 w-3" />
                 <span>Business Intel</span>
               </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center space-x-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                <Database className="h-4 w-4" />
+              <TabsTrigger value="data" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <Database className="h-3 w-3" />
                 <span>Data Hub</span>
               </TabsTrigger>
-              <TabsTrigger value="participate" className="flex items-center space-x-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                <MessageSquare className="h-4 w-4" />
-                <span>Take Survey</span>
+              <TabsTrigger value="subscription" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <Crown className="h-3 w-3" />
+                <span>Plans</span>
+              </TabsTrigger>
+              <TabsTrigger value="participate" className="flex items-center space-x-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                <MessageSquare className="h-3 w-3" />
+                <span>Survey</span>
               </TabsTrigger>
             </TabsList>
 
@@ -245,8 +277,16 @@ function App() {
               <VisualizedDashboard />
             </TabsContent>
 
+            <TabsContent value="professional">
+              <ProfessionalDashboard userTier={userTier} />
+            </TabsContent>
+
             <TabsContent value="detailed">
               <InsightsDashboard />
+            </TabsContent>
+
+            <TabsContent value="ai">
+              <AIInsightsGenerator />
             </TabsContent>
 
             <TabsContent value="business">
@@ -255,6 +295,10 @@ function App() {
 
             <TabsContent value="data">
               <ProprietaryDataHub />
+            </TabsContent>
+
+            <TabsContent value="subscription">
+              <SubscriptionManager />
             </TabsContent>
 
             <TabsContent value="participate">
